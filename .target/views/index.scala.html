@@ -1,7 +1,44 @@
-@(message: String)
+@(productList: List[models.Product])
 
-@main("Welcome to Play 2.1") {
+@main("Zappos Sale Notifier") {
     
-    @play20.welcome(message, style = "Java")
-    
+    <h1>Zappos Sale Notifier</h1>
+    <br/>
+    <!--url to access method via post request-->
+    <!--there are also form templates which might be nicer-->
+    <div class="row">
+    	<div class="span5">
+    		<h4>Submit a request to be emailed when a product is 20% off or more!</h4>
+		    <form action="@routes.Application.addWatch()" method="post">
+		    	<fieldset>
+			    	<!--
+			    	<label>Product Name:</label>
+			    	<input type="text" name="productName" placeholder="Steve Madden Evander 2">
+			    	-->
+			    	<label>Product Id (SKU number):</label>
+			    	<input type="text" name="productId" placeholder="8005976">
+			    	<label>Email Address:</label>
+			    	<input type="text" name="emailAddress" placeholder="someone@@example.com">
+			    	<br/>
+			    	<button type="submit" class="btn">Submit</button>
+		    	</fieldset>
+		    </form>
+	    </div>
+	    <div class="span6 offset1">
+	    	<h4>Search for a product!</h4>
+	   	 	<form action="@routes.Application.search()" method="post" class="form-search">
+		    	<fieldset>
+			    	<input type="text" name="productName" class="input-medium search-query" placeholder="Steve Madden Evander 2">
+			    	<button type="submit" class="btn">Search</button>
+		    	</fieldset>
+		    </form>
+		    @if(productList != null) {
+		    <ul>
+		    	@for(p <- productList) {
+		    		<li>@p.getProductName()</li>
+		    	}
+		    </ul>
+		    }
+	    </div>
+    </div>
 }

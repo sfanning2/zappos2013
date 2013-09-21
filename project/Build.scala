@@ -11,7 +11,8 @@ object ApplicationBuild extends Build {
     // Add your project dependencies here,
     javaCore,
     javaJdbc,
-    javaEbean
+    javaEbean,
+    "javax.ws.rs" % "javax.ws.rs-api" % "2.0"
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
