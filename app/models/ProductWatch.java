@@ -6,11 +6,15 @@ import java.util.Map;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
-import models.Product.Style;
+
+
+//import models.Product.Style;
 import play.data.validation.Constraints.Required;
 import play.db.ebean.Model;
 
@@ -24,58 +28,42 @@ public class ProductWatch extends Model{
 	public long id;
 	
 	@Required
-	public long productId;
+	private long productId;
 	
 	@Required
-	public String emailAddress;
+	private String emailAddress;
 	
-	public Map<Long,String> percentsOff;
+	private Product theProduct;
 
-	public Map<Long,String> getPercentsOff() {
-		return percentsOff;
+	@OneToOne (cascade = CascadeType.ALL)
+	@PrimaryKeyJoinColumn
+	public Product getTheProduct() {
+		return theProduct;
 	}
 
-	public void setPercentsOff(Map<Long,String> percentsOff) {
-		this.percentsOff = percentsOff;
+	public void setTheProduct(Product product) {
+		this.theProduct = product;
 	}
 	
-	public void setPercentsOff(Product product) {
-		Map<Long,String> percentsOff = new HashMap<Long,String>();
-		for (Style style : product.getStyles()) {
-			percentsOff.put(style.getStyleId(), style.getPercentOff());
-		}
-		this.percentsOff = percentsOff;
+	public ProductWatch() {
 	}
 	
-//	public String validate() {
-//		String errors = null;
-//		ZapposClient client = new ZapposClient();
-//    	try {
-//			setProduct(client.getProduct(Long.parseLong(productId)));
-//		} catch (NumberFormatException e) {
-//			// Invalid id format
-//			// Add error to response
-//			errors = "Please enter a valid productId. User numerical characters only";
-//		} catch (IOException e) {
-//			// This is probably bad on my side.
-//			e.printStackTrace();
-//			errors = "Something went wrong. Please try again.";
-//		} catch (RuntimeException e) {
-//			// Invalid status code
-//			// The product you entered was not found
-//			// Try again
-//			// Or I hit a rate limit or something
-//			errors = "Product not found.";
-//			e.printStackTrace();
-//		}
-//		return errors;
-//	}
+	public long getProductId() {
+		return productId;
+	}
 
-//	public Product getProduct() {
-//		return product;
-//	}
-//
-//	public void setProduct(Product product) {
-//		this.product = product;
-//	}
+	public void setProductId(long productId) {
+		this.productId = productId;
+	}
+
+	public String getEmailAddress() {
+		return emailAddress;
+	}
+
+	public void setEmailAddress(String emailAddress) {
+		this.emailAddress = emailAddress;
+	}
+
+
+
 }

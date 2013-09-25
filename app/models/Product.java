@@ -1,55 +1,32 @@
 package models;
 
-import java.math.BigDecimal;
+import java.io.Serializable;
+import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 
 import play.db.ebean.Model;
 
 @Entity
-public class Product extends Model{
+public class Product implements Serializable{
+	
+	private static final long serialVersionUID = -4305347155029455608L;
 
-	private static final long serialVersionUID = -2931587834427892120L;
-
-	// id 
 	@Id
-	public long myId;
+	public long id;
 	
-
-	// name
-	// currentPrice
-	// originalPrice
-	
-	
-//	 * product: (list)
-	
-//	 * brandId
-	private long brandId;
-//	 * brandName
-	private String brandName;
-//	 * productId
 	private long productId;
-//	 * productName
+	private long brandId;
+	private String brandName;
 	private String productName;
 	private String defaultProductUrl;
 	private String defaultImageUrl;
-//	 * 
-//	 * list of styles:
-	private Style[] styles;
-	
-	 
-	public Product() {
-		
-	}
-	public Product(int id, String name, BigDecimal currentPrice, BigDecimal originalPrice) {
-	
-		
-	}
-	
-	public Product(String json) {
-		
-	}
+	private Set<Style> styles;
 
 
 	public long getBrandId() {
@@ -88,80 +65,13 @@ public class Product extends Model{
 	public void setDefaultImageUrl(String defaultImageUrl) {
 		this.defaultImageUrl = defaultImageUrl;
 	}
-	public Style[] getStyles() {
+
+	@OneToMany (cascade = CascadeType.ALL)
+	public Set<Style> getStyles() {
 		return styles;
 	}
-	public void setStyles(Style[] styles) {
+	public void setStyles(Set<Style> styles) {
 		this.styles = styles;
-	}
-	
-
-
-
-	//	 * styleId:
-//	 * imageUrl:
-//	 * price:
-//	 * percentOff:
-//	 * color:
-//	 * originalPrice:
-//	 * productUrl:
-	public static class Style {
-
-		private long styleId;
-		private String imageUrl;
-		private String price;
-		private String percentOff;
-		private String color;
-		private String originalPrice;
-		private String productUrl;
-		
-		public Style() {
-			
-		}
-		
-		public long getStyleId() {
-			return styleId;
-		}
-		public void setStyleId(long styleId) {
-			this.styleId = styleId;
-		}
-		public String getImageUrl() {
-			return imageUrl;
-		}
-		public void setImageUrl(String imageUrl) {
-			this.imageUrl = imageUrl;
-		}
-		public String getPrice() {
-			return price;
-		}
-		public void setPrice(String price) {
-			this.price = price;
-		}
-		public String getPercentOff() {
-			return percentOff;
-		}
-		public void setPercentOff(String percentOff) {
-			this.percentOff = percentOff;
-		}
-		public String getColor() {
-			return color;
-		}
-		public void setColor(String color) {
-			this.color = color;
-		}
-		public String getOriginalPrice() {
-			return originalPrice;
-		}
-		public void setOriginalPrice(String originalPrice) {
-			this.originalPrice = originalPrice;
-		}
-		public String getProductUrl() {
-			return productUrl;
-		}
-		public void setProductUrl(String productUrl) {
-			this.productUrl = productUrl;
-		}
-		
 	}
 
 }

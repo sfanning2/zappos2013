@@ -1,4 +1,4 @@
-@(productList: List[models.Product])
+@(productList: List[models.Result])
 
 @main("Zappos Sale Notifier") {
     
@@ -16,7 +16,7 @@
 			    	<input type="text" name="productName" placeholder="Steve Madden Evander 2">
 			    	-->
 			    	<label>Product Id (SKU number):</label>
-			    	<input type="text" name="productId" placeholder="8005976">
+			    	<input type="text" name="productId" id="productId" placeholder="8005976">
 			    	<label>Email Address:</label>
 			    	<input type="text" name="emailAddress" placeholder="someone@@example.com">
 			    	<br/>
@@ -24,20 +24,43 @@
 		    	</fieldset>
 		    </form>
 	    </div>
-	    <div class="span6 offset1">
+	    <div class="span7">
 	    	<h4>Search for a product!</h4>
 	   	 	<form action="@routes.Application.search()" method="post" class="form-search">
 		    	<fieldset>
-			    	<input type="text" name="productName" class="input-medium search-query" placeholder="Steve Madden Evander 2">
+			    	<input type="text" name="searchTerms" class="input-medium search-query" placeholder="Steve Madden Evander 2">
 			    	<button type="submit" class="btn">Search</button>
 		    	</fieldset>
 		    </form>
 		    @if(productList != null) {
-		    <ul>
-		    	@for(p <- productList) {
-		    		<li>@p.getProductName()</li>
-		    	}
-		    </ul>
+		    <table class="table table-striped">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Name</th>
+					<th>Color</th>
+					<th>Product Id</th>
+				</tr>
+			</thead>
+			<tbody>
+				@for(p <- productList) {
+				<tr>
+					@{val link = "javascript:fillFunction(" + p.getProductId + ")"}
+					<td><a href="@{p.getProductUrl}" target="_blank">
+					<img src="@{p.getThumbnailImageUrl}" alt="thumbnail" class="thumb"/>
+					</a></td>
+					<td><a href="@{val link = "javascript:fillFunction(" + p.getProductId + ")"; link}">@p.getProductName()</a></td>
+					<td>@p.getColorId()</td>
+					<td>@p.getProductId()</td>
+				</tr>
+				}
+		    </tbody>
+		   	</table>
+		   	<p>
+		   	Selecting a product fills in the Product Id on the left.
+		   	<br/>
+		   	Selecting the image opens the Zappos product page.
+		   	</p>
 		    }
 	    </div>
     </div>

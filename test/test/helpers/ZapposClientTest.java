@@ -77,4 +77,11 @@ public class ZapposClientTest {
 		Arrays.fill(eleven, 1234567);
 		ZapposClient.getProducts(eleven);
 	}
+	
+	// Search
+	@Test
+	public void search() throws IOException {
+		String query = "boots";
+		ZapposClient.search(query);
+	}
 }

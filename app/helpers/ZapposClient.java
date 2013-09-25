@@ -1,12 +1,17 @@
 package helpers;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import javax.ws.rs.WebApplicationException;
 
 import com.sun.jersey.api.client.*;
 
 import models.Product;
+import models.Result;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
@@ -64,12 +69,13 @@ public final class ZapposClient {
 		return product;
 	}
 	
-	public static String search(String query) throws IOException {
+	public static List<Result> search(String query) throws IOException {
 		// /Search?term=<SEARCH_TERM> or /Search/term/<SEARCH_TERM>
 		StringBuilder builder = new StringBuilder(site);
 		builder.append("Search?term=").append(query);
 		builder.append("&key=").append(key);
-		return makeRequest(builder.toString());
+		String req = makeRequest(builder.toString());
+		return convertToResults(req);
 	}
 	
 	/**
@@ -87,14 +93,10 @@ public final class ZapposClient {
 		
 		int status = response.getStatus();
 		if (status < 200 || status >= 300) {
-			throw new RuntimeException("Failed : HTTP error code : "
-					+ response.getStatus());
+			throw new WebApplicationException(
+					response.getClientResponseStatus().getStatusCode());
 		}
-		//InputStream stream = response.getEntityInputStream();
-		//String str = "UTF-8";
-		//String output = IOUtils.toString(stream, str);
 		String output = response.getEntity(String.class);
-		//stream.close();
 		response.close();
 		return output;
 	}
@@ -120,5 +122,28 @@ public final class ZapposClient {
 			products.add(product);
 		}
 		return products;
+	}
+	
+	public static List<Result> convertToResults(String json) throws IOException {
+		List<Result> results = new ArrayList<Result>();
+		JsonFactory f = new JsonFactory();
+		ObjectMapper mapper = new ObjectMapper();
+		JsonParser parser = f.createJsonParser(json);
+
+		// Get the root node
+		JsonNode root = mapper.readTree(parser);
+		JsonNode resultRoot = root.get("results");
+		
+		Result result;
+		if (resultRoot.isArray()) {
+			for (JsonNode node : resultRoot) {
+				result = mapper.readValue(node, Result.class);
+				results.add(result);
+			}
+		} else {
+			result = mapper.readValue(resultRoot, Result.class);
+			results.add(result);
+		}
+		return results;
 	}
 }
