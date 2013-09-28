@@ -1,18 +1,13 @@
-package test.helpers;
+package ZapposAPI;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Set;
+import java.util.Map;
 
-import helpers.ZapposClient;
 import models.Product;
 
 import org.codehaus.jackson.JsonParseException;
 import org.junit.*;
-
-import play.mvc.*;
-import static play.test.Helpers.*;
-import static org.fest.assertions.Assertions.*;
 
 public class ZapposClientTest {
 	
@@ -55,7 +50,7 @@ public class ZapposClientTest {
 	// Multiple valid items
 	@Test
 	public void multipleItems() throws JsonParseException, IOException {
-		Set<Product> result = ZapposClient.getProducts(validIds);
+		Map<Long, Product> result = ZapposClient.getProducts(validIds);
 	}
 	
 	// Valid items and invalid items

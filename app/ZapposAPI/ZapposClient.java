@@ -1,9 +1,11 @@
-package helpers;
+package ZapposAPI;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ws.rs.WebApplicationException;
@@ -18,7 +20,7 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 
-public final class ZapposClient {
+final class ZapposClient {
 	private static final String site = "http://api.zappos.com/";
 	private static final String key = "52ddafbe3ee659bad97fcce7c53592916a6bfd73";
 	
@@ -33,7 +35,7 @@ public final class ZapposClient {
 	 * @throws IOException 
 	 * @throws JsonParseException 
 	 */
-	public static Set<Product> getProducts(long[] ids) throws IOException {
+	public static Map<Long, Product> getProducts(long[] ids) throws IOException {
 		if (ids.length > 10)
 			throw new IllegalArgumentException("The number of ids may not exceed ten.");
 		
@@ -52,21 +54,17 @@ public final class ZapposClient {
 		builder.append("&key=").append(key);
 		
 		String req = makeRequest(builder.toString());
-		return convertToProducts(req);
+		return convertToProductMap(req);
 	}
 	
 	public static Product getProduct(long id) throws IOException {
 		long[] ids = new long[1];
 		ids[0] = id;
-		Set<Product> products = getProducts(ids);
+		Map<Long, Product> products = getProducts(ids);
 		if (products.size() != 1) {
 			throw new IllegalStateException("There should be exactly one product.");
 		}
-		Product product = null;
-		for (Product p : products) {
-			product = p;
-		}		
-		return product;
+		return products.get(id);		
 	}
 	
 	public static List<Result> search(String query) throws IOException {
@@ -101,7 +99,7 @@ public final class ZapposClient {
 		return output;
 	}
 	
-	public static Set<Product> convertToProducts(String json) throws IOException {
+	public static Set<Product> convertToProductSet(String json) throws IOException {
 		Set<Product> products = new HashSet<Product>();
 		JsonFactory f = new JsonFactory();
 		ObjectMapper mapper = new ObjectMapper();
@@ -120,6 +118,29 @@ public final class ZapposClient {
 		} else {
 			product = mapper.readValue(productRoot, Product.class);
 			products.add(product);
+		}
+		return products;
+	}
+	
+	public static Map<Long,Product> convertToProductMap(String json) throws IOException {
+		Map<Long,Product> products = new HashMap<Long,Product>();
+		JsonFactory f = new JsonFactory();
+		ObjectMapper mapper = new ObjectMapper();
+		JsonParser parser = f.createJsonParser(json);
+		
+		// Get the root node
+		JsonNode root = mapper.readTree(parser);
+		JsonNode productRoot = root.get("product");
+		
+		Product product;
+		if (productRoot.isArray()) {
+			for (JsonNode node : productRoot) {
+				product = mapper.readValue(node, Product.class);
+				products.put(product.getProductId(), product);
+			}
+		} else {
+			product = mapper.readValue(productRoot, Product.class);
+			products.put(product.getProductId(), product);
 		}
 		return products;
 	}

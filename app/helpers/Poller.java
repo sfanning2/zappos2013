@@ -1,67 +1,86 @@
 package helpers;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
 
+import models.ProductTask;
 import models.ProductWatch;
 import play.db.ebean.Model;
 
 // Should be run once only?
 // RequestProducer
 public class Poller implements Runnable{
-
+	
+	private static volatile boolean stopRequested;
+	
 	@Override
 	public void run() {
-		Executor e = Consumer.getInstance();
-		CompletionService<T> ecs = new ExecutorCompletionService<T>();
-		// Spawn collection of Callable objects
-		Set<Callable<T>> jobChunks = new HashSet<Callable<T>>();
-		// Get stuff from db
-		List<ProductWatch> watches = Poller.getWatches();
-		for (ProductWatch w : watches) {
-			
+		while(!stopRequested) {
+			// Spawn collection of Callable objects
+			Set<ProductTask> jobChunks = new HashSet<ProductTask>();
+			// Get stuff from the database
+			List<ProductWatch> watches = Poller.getWatches();
+			int c = 0;
+			int groupSize = 10;
+			Set<ProductWatch> watchGroup = null;
+			// Chunk watches into groups and make tasks
+			for (ProductWatch w : watches) {
+				if (c % groupSize == 0) {
+					// Add the finished group
+					if ( watchGroup != null) {
+						ProductTask pt = new ProductTask(watchGroup);
+						jobChunks.add(pt);
+					}
+					// Create the next group
+					watchGroup = new HashSet<ProductWatch>();
+				}
+				watchGroup.add(w);
+			}
+
+			Executor e = Executors.newFixedThreadPool(4);
+			CompletionService<Object> ecs = new ExecutorCompletionService<Object>(e);
+
+			for (ProductTask jobChunk : jobChunks)
+				ecs.submit(jobChunk);
+			int n = jobChunks.size();
+			for (int i = 0; i < n; ++i) {
+				try {
+					Object r = ecs.take();//.get();
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+
+			// 1
+			// Wait a certain amount of time before making another db call
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
-		// Chunk it into groups of 10
-		for (Callable<T> jobChunk : jobChunks)
-	           ecs.submit(jobChunk);
-	       int n = jobChunks.size();
-	       for (int i = 0; i < n; ++i) {
-	           T r = ecs.take().get();
-	           // Logic goes below
-	           if (r != null)
-	               use(r);
-	       }
-		
-		
-		// Send out jobs to the PriorityBlockingQueue for api
-		// Job are include the old and the new
-		
-		// 1
-		// Wait a certain amount of time before making another db call
-		// Repeat
-		
-		
-		// 2
-		// Need to know if finished....
-		// Is it okay to get it randomly
-		// As they finish, check the percent offs (another job?)
-		// Write where necessary.
-		// Once they all finish ask db again
-		
-		
-		
 	}
-	
+
 	//checkout findPagingList for Model.Finder
 	public static List<ProductWatch> getWatches() {
 		List<ProductWatch> watches = 
-    			new Model.Finder<String,ProductWatch>(String.class, ProductWatch.class)
-    			.all();
+				new Model.Finder<String,ProductWatch>(String.class, ProductWatch.class)
+				.all();
 		return watches;
 	}
 	
+	public static void requestStop() {
+		stopRequested = true;
+	}
+
 }
