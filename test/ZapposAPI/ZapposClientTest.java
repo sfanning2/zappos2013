@@ -2,9 +2,6 @@ package ZapposAPI;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
-
-import models.Product;
 
 import org.codehaus.jackson.JsonParseException;
 import org.junit.*;
@@ -40,7 +37,7 @@ public class ZapposClientTest {
 	// Single valid item
 	@Test
 	public void singleItem() throws JsonParseException, IOException {
-		Product result = ZapposClient.getProduct(validIds[0]);
+		ZapposClient.getProduct(validIds[0]);
 	}
 	// Single invalid item
 	@Test (expected = RuntimeException.class)
@@ -50,7 +47,7 @@ public class ZapposClientTest {
 	// Multiple valid items
 	@Test
 	public void multipleItems() throws JsonParseException, IOException {
-		Map<Long, Product> result = ZapposClient.getProducts(validIds);
+		ZapposClient.getProducts(validIds);
 	}
 	
 	// Valid items and invalid items

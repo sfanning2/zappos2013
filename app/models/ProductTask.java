@@ -2,9 +2,6 @@ package models;
 
 import helpers.EmailClient;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -14,18 +11,22 @@ import javax.mail.MessagingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import play.Logger;
 import ZapposAPI.ZapposRequestConsumer;
 
 import com.avaje.ebean.Ebean;
 
 public class ProductTask implements Callable<Object>, Comparable<ProductTask> {
-
+	
 	private final int priority;
 	private long[] productIds;
 	private Map<Long,Product> resultProducts;
 	private Set<ProductWatch> originalWatches;
-	// if modified, must update ids
-
+	public static final String CONTENT_FORMAT = "Hello! The product you followed \"%s\" in \"%s\" is on sale for %s off or more!\n"
+			+ "Click the following link to be taken to the product page: %s\n"
+			+ "Thank you!\n"
+			+ "Sarah Fanning 2013 Mindsumo Submission";
+	public static final String SUBJECT = "";
 	/**
 	 * Creates a ProductTask with the specified watches 
 	 * at the lowest priority.
@@ -53,7 +54,6 @@ public class ProductTask implements Callable<Object>, Comparable<ProductTask> {
 		}
 	}
 
-
 	@Override
 	public int compareTo(ProductTask otherTask) {
 		return this.priority - otherTask.priority;
@@ -61,50 +61,41 @@ public class ProductTask implements Callable<Object>, Comparable<ProductTask> {
 
 	@Override
 	public Object call() throws Exception {
-		resultProducts = null;
+		Logger.debug("Product Task is running...");
 		resultProducts = getProducts();
-
-		// TODO: what if null?
+		Logger.debug("Got Products: " + resultProducts.size());
 		if (resultProducts != null) {
 			for (ProductWatch w: originalWatches) {
 				// Get corresponding product and update it
-				Product p = resultProducts.get(w.getProductId());
-				Set<Style> pStyles = p.getStyles();
-				Set<Style> wStyles = w.getTheProduct().getStyles();
-				for (Style ps: pStyles) {
-					double off = -1;
-					try {
-						off = Double.parseDouble(
-								ps.getPercentOff()
-								.replaceAll("%", ""));
-					} catch (NumberFormatException e) {
-						// TODO: should this ever happen?
-						// Log it at least
-					}
-					if (off >= 20) {
-						// Check if changed
-						Style ws = ps.getMatchingStyle(wStyles);
-						if (ps != ws) {
-							// Notify if it has
-							EmailClient eClient = new EmailClient(null, null, null);
-							String[] to = {w.getEmailAddress()};
-							// TODO: email stuff
-							// Possibly in thread?
-							try {
-								eClient.sendEmail(to, "subject", "content");
-							} catch (MessagingException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+				Product newProduct = resultProducts.get(w.getProductId());
+				Logger.debug("Saving new product info...");
+				w.setTheProduct(newProduct);
+				Ebean.save(newProduct);
+				Ebean.save(w);
+				Logger.debug("Completed saving product info.");
+				Set<Style> newStyles = newProduct.getStyles();
+				for (Style newStyle: newStyles) {
+					double off = newStyle.getPercentOffAsDouble();
+					if (off >= 20.0 - 0.000001) {
+						Logger.debug("20%+");
+						EmailClient eClient = new EmailClient();
+						String[] to = {w.getEmailAddress()};
+						try {
+							Logger.debug("Sending email...");
+							eClient.sendEmail(to, "Zappos Sale!", String.format(
+									CONTENT_FORMAT, 
+									newProduct.getProductName(),
+									newStyle.getColor(),
+									newStyle.getPercentOff(),
+									newProduct.getDefaultProductUrl()));
+							// If sent, then delete items
+							Logger.debug("Deleting watch...");
+							Ebean.delete(w);
+							Logger.debug("Completed deleting watch.");
+						} catch (MessagingException e) {
+							Logger.error("Problem sending message.", e);
 						}
-
 					}
-					// Save either way
-					// Could cause locking
-					// TODO: Add synchronized method to do db deletes/saves/reads?
-					Ebean.delete(w.getTheProduct());
-					w.setTheProduct(p);
-					Ebean.save(w);
 				}
 			}
 		}
@@ -115,10 +106,12 @@ public class ProductTask implements Callable<Object>, Comparable<ProductTask> {
 	 * Get the products from the Zappos API, 
 	 * and respond to any status issues.
 	 * @return	A Map of the products from the remote call
+	 * 			or null if there was a problem
 	 */
 	private Map<Long, Product> getProducts() {
+		Map<Long, Product> products = null;
 		try {
-			resultProducts = 
+			products = 
 					ZapposRequestConsumer.getInstance()
 					.requestProducts(productIds).get();
 		} catch (WebApplicationException e) {
@@ -128,21 +121,19 @@ public class ProductTask implements Callable<Object>, Comparable<ProductTask> {
 			Response r = e.getResponse();
 			int status = r.getStatus();
 			// TODO: Process bad responses
+			Logger.error("Non 2xx response: " + status, e);
 			if (status >= 300) {
 
 			} else if (status < 200) {
 
 			} else {
-				// Why are we here
-				// Something is very weird
-				// TODO: Log it!
 			}	
 		} catch (InterruptedException e) {
-			// TODO
+			Logger.error("API call interrupted", e);
 		} catch (ExecutionException e) {
-			// TODO
+			Logger.error("API call had a problem while executing", e);
 		}
 
-		return null;
+		return products;
 	}
 }

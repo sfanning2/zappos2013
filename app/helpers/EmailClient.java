@@ -14,12 +14,18 @@ import java.util.Properties;
  *
  */
 public class EmailClient {
-
+	public static final String DEFAULT_HOST = "smtp.gmail.com";
+	public static final String DEFAULT_USER = "2013zapposinternshipchallenge@gmail.com";
+	public static final String DEFAULT_PASSWORD = "Plaintextissupersecure";
 	private String host;
 	private String from;
 	private String fromPassword;
 	private Properties properties;
 	private Session session;
+	
+	public EmailClient() {
+		this(DEFAULT_HOST, DEFAULT_USER, DEFAULT_PASSWORD);
+	}
 	
 	public EmailClient(String host, String from, String fromPassword) {
 		this.host = host;
@@ -48,9 +54,7 @@ public class EmailClient {
 			toAddress[i] = new InternetAddress(to[i]);
 		}
 
-		// TODO: Remove printlns
 		// TODO: checkout GmailMessage
-		System.out.println(Message.RecipientType.TO);
 
 		for( int i=0; i < toAddress.length; i++) {
 			message.addRecipient(Message.RecipientType.TO, toAddress[i]);

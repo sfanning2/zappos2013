@@ -1,5 +1,6 @@
 /helpers
 /models
-/controllers
 /ZapposAPI
+/controllers
+/views
 /test

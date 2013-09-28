@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -15,41 +17,45 @@ public final class ZapposRequestConsumer {
 	/** Singleton instance of the class */
 	private static final ZapposRequestConsumer INSTANCE = 
 			new ZapposRequestConsumer();
-	
+
 	/** Scheduler to restrict access to the Zappos API */
 	private final ThreadPoolExecutor scheduler;
-	
+
 	/** Limits imposed by the Zappos API */
 	static final long CALLS_PER_SECOND = 2;
 	static final long CALLS_PER_DAY = 2500;
 	static final long MILLISECONDS_DELAY = 1000 / CALLS_PER_SECOND;
-	
+
 	private ZapposRequestConsumer() {
 		scheduler = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
-                new PriorityBlockingQueue<Runnable>()); {
+				new PriorityBlockingQueue<Runnable>()){
+			protected <V> RunnableFuture<V> newTaskFor(Callable<V> c) {
+				return new ZapposFutureTask<V>(c);
+			}
+		}; {
 		}
 	}
-	
+
 	public static ZapposRequestConsumer getInstance() {
 		return INSTANCE;
 	}
-	
+
 	public Future<Map<Long,Product>> requestProducts(long[] productIds){
 		return scheduler.submit(new ProductRequest(productIds));
 	}
-	
+
 	public Future<Map<Long,Product>> requestProducts(long[] productIds, int priority){
 		return scheduler.submit(new ProductRequest(productIds, priority));
 	}
-	
+
 	public Future<List<Result>> requestSearch(String query){
 		return scheduler.submit(new SearchRequest(query));
 	}
-	
+
 	public Future<List<Result>> requestSearch(String query, int priority){
 		return scheduler.submit(new SearchRequest(query, priority));
 	}
-	
+
 	private class ProductRequest extends ZapposRequest<Map<Long,Product>> {
 		private long[] productIds;
 		public ProductRequest(long[] productIds) {
@@ -65,7 +71,7 @@ public final class ZapposRequestConsumer {
 			return ZapposClient.getProducts(productIds);
 		}
 	}
-	
+
 	private class SearchRequest extends ZapposRequest<List<Result>> {
 		private String query;
 		public SearchRequest(String query) {
@@ -81,5 +87,22 @@ public final class ZapposRequestConsumer {
 			return ZapposClient.search(query);
 		}
 	}
-	
+
+	private class ZapposFutureTask<T> extends FutureTask<T> implements Comparable<ZapposFutureTask<T>> {
+		private int priority;
+		public ZapposFutureTask(Callable<T> callable) {
+			super(callable);
+		}
+		public ZapposFutureTask(ZapposRequest<T> request) {
+			super(request);
+			priority = request.getPriority();
+		}
+		public int getPriority() {
+			return priority;
+		}
+		@Override
+		public int compareTo(ZapposFutureTask<T> o) {
+			return priority - o.getPriority();
+		}
+	}
 }

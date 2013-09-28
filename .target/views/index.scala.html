@@ -1,11 +1,10 @@
-@(productList: List[models.Result])
+@(productList: List[models.Result], reqForm: Form[models.ProductWatch])
 
 @main("Zappos Sale Notifier") {
     
     <h1>Zappos Sale Notifier</h1>
     <br/>
-    <!--url to access method via post request-->
-    <!--there are also form templates which might be nicer-->
+    
     <div class="row">
     	<div class="span5">
     		<h4>Submit a request to be emailed when a product is 20% off or more!</h4>
@@ -22,6 +21,20 @@
 			    	<br/>
 			    	<button type="submit" class="btn">Submit</button>
 		    	</fieldset>
+
+		    	@if(reqForm != null && reqForm.hasErrors) {
+				    <div class="alert alert-error">
+				        <a class="close" data-dismiss="alert">x</a>
+				        @if(reqForm.errors.size() > 0) {
+				            @for((key, value) <- reqForm.errors) {
+				                @key.toString() : 
+				                    @for(err <- value) {
+				                        @err.message().toString()
+				                    }
+				            }
+				        } else {No error returned.}
+				    </div>
+					}
 		    </form>
 	    </div>
 	    <div class="span7">

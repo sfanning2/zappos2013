@@ -1,4 +1,10 @@
-This is your new Play 2.1 application
+2013 Zappos Mindsumo Challenge
 =====================================
 
-This file will be packaged with your application, when using `play dist`.
+Hi Zappos! 
+I'm Sarah Fanning, and this is my submission to the Mindsumo challenge for Summer 2013 internships.
+This project came out a little rough, but I had a fun time working on it.
+To run the application locally, you'll need the Play framework, unfortunately.
+If you want to do that, here's the guide: http://www.playframework.com/documentation/2.0/Installing
+
+

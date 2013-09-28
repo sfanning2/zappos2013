@@ -82,4 +82,8 @@ public class Style implements Serializable{
 		return null;
 	}
 	
+	public double getPercentOffAsDouble() {
+		return Double.parseDouble(percentOff.replaceAll("%", ""));
+	}
+	
 }

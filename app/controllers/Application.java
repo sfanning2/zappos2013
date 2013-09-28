@@ -1,7 +1,6 @@
 package controllers;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -13,40 +12,35 @@ import com.avaje.ebean.Ebean;
 import models.Product;
 import models.ProductWatch;
 import play.data.Form;
-import play.data.validation.ValidationError;
 import play.db.ebean.Model;
 import play.mvc.*;
 import views.html.*;
-import views.html.helper.form;
 import static play.libs.Json.toJson;
 
 public class Application extends Controller {
 
 	public static Result index() {
-		return ok(index.render(null));
+		return ok(index.render(null,null));
 	}
 
 	public static Result index(List<models.Result> list) {
-		return ok(index.render(list));
+		return ok(index.render(list,null));
 	}
 
 	public static Result addWatch() {
 		Form<ProductWatch> watchForm = Form.form(ProductWatch.class);
 		Form<ProductWatch> submission = watchForm.bindFromRequest();
+		if (submission.hasErrors()) {
+			return badRequest(index.render(null, submission));
+		}
 		ProductWatch watch = submission.get();
-		int errors = 0;
 		// Get the product from Zappos
 		Product product = new Product();
 		product.setProductId(watch.getProductId());
 		watch.setTheProduct(product);
 
-		// Validation logic goes in this method
-		// Verify the productId is non-blank and has a positive long
-		// Verify the email is non-blank and has @ and .
-		if (errors == 0) {
-			Ebean.save(product);
-			Ebean.save(watch);
-		}
+		Ebean.save(product);
+		Ebean.save(watch);
 
 		return redirect(routes.Application.index());
 	}

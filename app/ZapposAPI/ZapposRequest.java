@@ -4,7 +4,7 @@ import java.util.concurrent.Callable;
 
 abstract class ZapposRequest<T> implements Callable<T>, Comparable<ZapposRequest<T>> {
 
-	final int priority;
+	private final int priority;
 
 	public ZapposRequest() {
 		this.priority = Integer.MAX_VALUE;

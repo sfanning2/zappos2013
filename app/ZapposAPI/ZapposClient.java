@@ -29,7 +29,7 @@ final class ZapposClient {
 	}
 	
 	/**
-	 * 
+	 * Fetch products from the api
 	 * @param ids	And array of ten or fewer item ids
 	 * @return
 	 * @throws IOException 
@@ -70,9 +70,10 @@ final class ZapposClient {
 	public static List<Result> search(String query) throws IOException {
 		// /Search?term=<SEARCH_TERM> or /Search/term/<SEARCH_TERM>
 		StringBuilder builder = new StringBuilder(site);
-		builder.append("Search?term=").append(query);
-		builder.append("&key=").append(key);
-		String req = makeRequest(builder.toString());
+		builder.append("Search?term=%22").append(query);
+		builder.append("%22&key=").append(key);
+		String url = builder.toString().replace(" ", "%20");
+		String req = makeRequest(url);
 		return convertToResults(req);
 	}
 	

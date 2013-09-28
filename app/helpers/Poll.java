@@ -1,72 +1,78 @@
 package helpers;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
 
 import models.ProductTask;
 import models.ProductWatch;
+import play.Logger;
 import play.db.ebean.Model;
 
-// Should be run once only?
-// RequestProducer
-public class Poller implements Runnable{
+public final class Poll implements Runnable{
 	
 	private static volatile boolean stopRequested;
 	
 	@Override
 	public void run() {
+		stopRequested = false;
+		Logger.debug("Poller has started");
 		while(!stopRequested) {
 			// Spawn collection of Callable objects
 			Set<ProductTask> jobChunks = new HashSet<ProductTask>();
-			// Get stuff from the database
-			List<ProductWatch> watches = Poller.getWatches();
-			int c = 0;
-			int groupSize = 10;
-			Set<ProductWatch> watchGroup = null;
+			// Get watches from the database
+			List<ProductWatch> watches = getWatches();
+		
 			// Chunk watches into groups and make tasks
+			Set<ProductWatch> watchGroup = new HashSet<ProductWatch>();;
+			int groupSize = 10;
+			int c = 0;
+			Logger.debug("About to iterate watches...");
+			Logger.debug("Number: " + watches.size());
 			for (ProductWatch w : watches) {
+				// Add a watch to the current group
+				watchGroup.add(w);
+				c++;
 				if (c % groupSize == 0) {
-					// Add the finished group
-					if ( watchGroup != null) {
-						ProductTask pt = new ProductTask(watchGroup);
-						jobChunks.add(pt);
-					}
+					// Add the group
+					ProductTask pt = new ProductTask(watchGroup);
+					jobChunks.add(pt);
 					// Create the next group
 					watchGroup = new HashSet<ProductWatch>();
 				}
-				watchGroup.add(w);
 			}
+			if (watchGroup.size() > 0) {
+				// Add the group
+				ProductTask pt = new ProductTask(watchGroup);
+				jobChunks.add(pt);
+			}
+			Logger.debug("Completed iterating watches..." + watchGroup.size());
 
-			Executor e = Executors.newFixedThreadPool(4);
+			Executor e = Executors.newFixedThreadPool(1);
 			CompletionService<Object> ecs = new ExecutorCompletionService<Object>(e);
 
-			for (ProductTask jobChunk : jobChunks)
+			for (ProductTask jobChunk : jobChunks) {
+				Logger.debug("Submitting job...");
 				ecs.submit(jobChunk);
+			}
 			int n = jobChunks.size();
 			for (int i = 0; i < n; ++i) {
 				try {
-					Object r = ecs.take();//.get();
+					ecs.take();
 				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					Logger.error("Poller interrupted during taking.", e1);
 				}
 			}
 
-			// 1
 			// Wait a certain amount of time before making another db call
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(30000);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				Logger.error("Poller interrupted during sleep.", e1);
 			}
 		}
 	}

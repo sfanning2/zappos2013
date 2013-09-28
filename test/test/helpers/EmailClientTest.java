@@ -2,11 +2,11 @@ package test.helpers;
 
 import javax.mail.MessagingException;
 
-import org.junit.Test;
+//import org.junit.Test;
 
 import helpers.EmailClient;
 
-public class WebClientTest {
+public class EmailClientTest {
 	
 	String host = "smtp.gmail.com";
 	String user = "2013zapposinternshipchallenge@gmail.com";
@@ -18,7 +18,7 @@ public class WebClientTest {
 	String content = "Sample content.";
 	
 	// Send email
-	@Test
+	//@Test
 	public void sendEmail() throws MessagingException{
 		EmailClient client = new EmailClient(host, user, password);
 		client.sendEmail(recipients, subject, content);
